@@ -8,27 +8,44 @@
 #ifndef __MV_MEM_H__
 #define __MV_MEM_H__
 
-#include <sys/ipc.h>
-#include <sys/shm.h>
+typedef int I1;
+typedef float F1;
+typedef double D1;
 
-#define bfree(M,b) free((char**)M-b)
+typedef unsigned char gray;
 
-#define malloc_intv(size,vec,clr) mem((size)*sizeof(int),clr,(char**)(vec))
-#define malloc_doublev(size,vec,clr) mem((size)*sizeof(double),clr,(char**)(vec))
+typedef struct {
+  unsigned char r;
+  unsigned char g;
+  unsigned char b;
+} pixel;
 
-//void nfree(void** p);
-int mem(int size,int clr,char** _p);
-int mmem(int R,int C,int size,int clr,char*** _mat);
-int vrmem(int* R,int C,int size,int clr,char*** _mat);
-int bmem(int R,int C,int size,int clr,int brd,char*** _mat);
-int tmem(int D,int size,int clr,char*** _mat);
+typedef struct {
+  I1 idx;
+  F1 val;
+} IF1;
+
+void bfree( void* mat, int brd );
+int clone_graym( gray** mat, int R, int C, gray*** _clon );
+
+int malloc_I1v( int size, I1** _vec, char clr );
+int malloc_F1v( int size, F1** _vec, char clr );
+int malloc_D1v( int size, D1** _vec, char clr );
+int malloc_IF1v( int size, IF1** _vec, char clr );
+
+int malloc_graym( int imW, int imH, gray*** _im, char clr );
+int malloc_pixelm( int imW, int imH, pixel*** _im, char clr );
+int malloc_I1m( int R, int C, I1*** _mat, char clr );
+int malloc_F1m( int R, int C, F1*** _mat, char clr );
+
+
+void nullfree(void* ptr);
 int mclone(char** mat, int R, int C, int size, char*** _clon);
-
-#define shmalloc_floatm(R,C,M,clr,sid) mshmget((R),(C),sizeof(float),(clr),(char***)(M),(sid))
-#define shmattach_floatm(R,C,M,sid) mshmat((R),(C),sizeof(float),(char***)(M),(sid))
-
-int mshmget( int R, int C, int size, int clr, char*** _mat, int* _shmid );
-int mshmat( int* _R, int* _C, int size, char*** _mat, int shmid );
-void mshmdt( void* p );
+int mem(int size,char clr,char** _p);
+int mmem(int R,int C,int size,char clr,char*** _mat);
+int bmem(int R,int C,int size,char clr,int brd,char*** _mat);
+int tmem(int D,int size,char clr,char*** _mat);
+void vrmem_index( int size, int* R, int C, char** mat );
+int vrmem( int size, int tnnz, int* R, int C, char clr, char*** _mat, int** _R );
 
 #endif

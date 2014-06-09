@@ -11,16 +11,53 @@
 #include <stdio.h>
 #include <string.h>
 
-/*void nfree(void** p) {
-  if(p[0]!=NULL) {
-    free(p[0]);
-    p[0]=NULL;
-  } else
-    fprintf(stderr,"nfree: warning: tryed to free a null pointer\n");
-}*/
+//#define bfree(M,b) free((char**)M-b)
+void bfree( void* mat, int brd )
+  { free((char**)mat-brd); }
 
-int mem(int size,int clr,char** _p)
-{
+int clone_graym( gray** mat, int R, int C, gray*** _clon )
+  { return mclone((char**)mat,R,C,sizeof(gray),(char***)_clon); }
+
+int malloc_I1v( int size, I1** _vec, char clr )
+  { return mem(size*sizeof(I1),clr,(char**)_vec); }
+int malloc_F1v( int size, F1** _vec, char clr )
+  { return mem(size*sizeof(F1),clr,(char**)_vec); }
+int malloc_D1v( int size, D1** _vec, char clr )
+  { return mem(size*sizeof(D1),clr,(char**)_vec); }
+int malloc_IF1v( int size, IF1** _vec, char clr )
+  { return mem(size*sizeof(IF1),clr,(char**)_vec); }
+
+int malloc_graym( int imW, int imH, gray*** _im, char clr )
+  { return mmem(imW,imH,sizeof(gray),clr,(char***)_im); }
+int malloc_pixelm( int imW, int imH, pixel*** _im, char clr )
+  { return mmem(imW,imH,sizeof(pixel),clr,(char***)_im); }
+int malloc_I1m( int R, int C, I1*** _mat, char clr )
+  { return mmem(R,C,sizeof(I1),clr,(char***)_mat); }
+int malloc_F1m( int R, int C, F1*** _mat, char clr )
+  { return mmem(R,C,sizeof(F1),clr,(char***)_mat); }
+
+
+void nullfree(void* ptr) {
+  void** p = (void**)ptr;
+  if( p[0] != NULL ) {
+    free(p[0]);
+    p[0] = NULL;
+  }
+  else
+    fprintf(stderr,"nullfree: warning: tried to free a null pointer\n");
+}
+
+int mclone(char** mat, int R, int C, int size, char*** _clon) {
+  int err = mmem(R,C,size,0,_clon);
+  if(err!=EXIT_SUCCESS)
+    return err;
+
+  memcpy(_clon[0][0],mat[0],R*C*size);
+
+  return EXIT_SUCCESS;
+}
+
+int mem(int size,char clr,char** _p) {
   char *p;
 
   if((p=(char*)malloc(size))==NULL)
@@ -32,8 +69,7 @@ int mem(int size,int clr,char** _p)
   return EXIT_SUCCESS;
 }
 
-int mmem(int R,int C,int size,int clr,char*** _mat)
-{
+int mmem(int R,int C,int size,char clr,char*** _mat) {
   int c;
   char **mat,*vec;
 
@@ -50,30 +86,7 @@ int mmem(int R,int C,int size,int clr,char*** _mat)
   return EXIT_SUCCESS;
 }
 
-int vrmem(int* R,int C,int size,int clr,char*** _mat)
-{
-  int c;
-  char **mat,*vec;
-
-  int TR=0;
-  for(c=0;c<C;c++)
-    TR+=R[c];
-
-  mat=(char**)malloc(C*sizeof(char*)+TR*C*size);
-  if(mat==NULL)
-    return EXIT_FAILURE;
-  vec=(char*)(mat+C);
-  for(c=0;c<C;vec+=R[c]*size,c++)
-    mat[c]=vec;
-  if(clr)
-    memset(mat[0],0,TR*C*size);
-
-  *_mat=mat;
-  return EXIT_SUCCESS;
-}
-
-int bmem(int R,int C,int size,int clr,int brd,char*** _mat)
-{
+int bmem(int R,int C,int size,char clr,int brd,char*** _mat) {
   int c;
   char **mat,*vec;
 
@@ -90,8 +103,7 @@ int bmem(int R,int C,int size,int clr,int brd,char*** _mat)
   return EXIT_SUCCESS;
 }
 
-int tmem(int D,int size,int clr,char*** _mat)
-{
+int tmem(int D,int size,char clr,char*** _mat) {
   int d;
   char **mat,*vec;
 
@@ -108,78 +120,31 @@ int tmem(int D,int size,int clr,char*** _mat)
   return EXIT_SUCCESS;
 }
 
-int mclone(char** mat, int R, int C, int size, char*** _clon) {
-  int err = mmem(R,C,size,0,_clon);
-  if(err!=EXIT_SUCCESS)
-    return err;
-
-  memcpy(_clon[0][0],mat[0],R*C*size);
-
-  return EXIT_SUCCESS;
+void vrmem_index( int size, int* R, int C, char** mat ) {
+  int c;
+  char *ptr = mat[0]+R[0]*size;
+  for( c=1; c<C; ptr+=R[c]*size, c++ )
+    mat[c] = ptr;
 }
 
-int mshmget( int R, int C, int size, int clr, char*** _mat, int* _shmid ) {
-  int shmid;
-  char **mat, *vec;
+int vrmem( int size, int tnnz, int* R, int C, char clr, char*** _mat, int** _R ) {
+  char **mat, *ptr;
 
-  shmid = shmget( IPC_PRIVATE, 4*sizeof(int)+R*C*size, 0660|IPC_CREAT|IPC_EXCL );
-  if( shmid == -1 )
+  ptr = (char*)malloc(C*(sizeof(int)+sizeof(char*))+tnnz*size);
+  if( ptr == NULL )
     return EXIT_FAILURE;
-
-  vec = (char*)shmat( shmid, NULL, 0 );
-  ((int*)vec)[0] = R;
-  ((int*)vec)[1] = C;
-  ((int*)vec)[2] = size;
-  ((int*)vec)[3] = 'm';
-  shmdt( vec );
-
-  if( mshmat( NULL, NULL, size, &mat, shmid ) )
-    return EXIT_FAILURE;
-
+  if( R != NULL )
+    memcpy(ptr,R,C*sizeof(int));
+  else
+    memset(ptr,0,C*sizeof(int));
+  R = (int*)ptr;
+  mat = (char**)(ptr+C*sizeof(int));
+  mat[0] = (char*)(mat+C);
+  vrmem_index(size,R,C,mat);
   if( clr )
-    memset( mat[0], 0, R*C*size );
+    memset(mat[0],0,tnnz*size);
 
-  *_mat = mat;
-  *_shmid = shmid;
-  return EXIT_SUCCESS;
-}
-
-int mshmat( int* _R, int* _C, int size, char*** _mat, int shmid ) {
-  int c, R, C;
-  char **mat, *vec;
-
-  vec = (char*)shmat( shmid, NULL, 0 );
-  if( ((int*)vec)[3] != 'm' ||
-      ((int*)vec)[2] != size )
-      return EXIT_FAILURE;
-  R = ((int*)vec)[0];
-  C = ((int*)vec)[1];
-
-  mat = (char**)malloc(C*sizeof(char*));
-  if( mat == NULL ) {
-    shmdt( vec );
-    return EXIT_FAILURE;
-  }
-
-  vec += 4*sizeof(int);
-  for( c=0; c<C; c++, vec += R*size )
-    mat[c] = vec;
-
-  if( _R != NULL )
-    *_R = R;
-  if( _C != NULL )
-    *_C = C;
+  *_R = R;
   *_mat = mat;
   return EXIT_SUCCESS;
-}
-
-void mshmdt( void* p ) {
-  int *vec = (int*)p;
-  switch( *(vec-1) ) {
-    case 'm':
-      shmdt( vec-4 );
-      break;
-    default:
-      fprintf(stderr,"mshmdt: warning: unknown type to detach '%c'\n",(char)(*(vec-1)));
-  }
 }
