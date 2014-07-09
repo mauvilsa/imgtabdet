@@ -245,6 +245,11 @@ int fscanMAT( char type, int elements, FILE* file, char*** _matrix, int* _R, int
   char *p, *mat;
   char fformat, ftype;
 
+#ifndef __MV_MEMSH_H__
+  if(_shmid!=NULL)
+    return EXIT_FAILURE;
+#endif
+
   /* read header */
   if( fscanMATHead(file,&R,&C,_name,&ftype,&felements,&fformat) ) {
     fprintf(stderr,"fscanMAT: error: problems reading matrix header\n");
@@ -422,8 +427,8 @@ int fscanVEC( char type, int elements, FILE* file, char* vec, int D, FILE* mess 
   int ch = fgetc(file);
 
   if( feof(file) ) {
-    if( mess != NULL )
-      fprintf(mess,"fscanVEC: warning: reached end of file\n");
+    //if( mess != NULL )
+    //  fprintf(mess,"fscanVEC: warning: reached end of file\n");
     return EXIT_FAILURE;
   }
 
