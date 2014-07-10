@@ -22,8 +22,13 @@ typedef struct {
 
 typedef struct {
   I1 idx;
+  I1 val;
+} iI1;
+
+typedef struct {
+  I1 idx;
   F1 val;
-} IF1;
+} iF1;
 
 void bfree( void* mat, int brd );
 int clone_graym( gray** mat, int R, int C, gray*** _clon );
@@ -31,7 +36,8 @@ int clone_graym( gray** mat, int R, int C, gray*** _clon );
 int malloc_I1v( int size, I1** _vec, char clr );
 int malloc_F1v( int size, F1** _vec, char clr );
 int malloc_D1v( int size, D1** _vec, char clr );
-int malloc_IF1v( int size, IF1** _vec, char clr );
+int malloc_iI1v( int size, iI1** _vec, char clr );
+int malloc_iF1v( int size, iF1** _vec, char clr );
 
 int malloc_graym( int imW, int imH, gray*** _im, char clr );
 int malloc_pixelm( int imW, int imH, pixel*** _im, char clr );

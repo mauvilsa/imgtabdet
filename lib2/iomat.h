@@ -14,7 +14,7 @@
 
 #define format_ASCII       'a'
 #define format_ASCIINOHEAD 'A'
-#define format_MAT         'm'
+#define format_OCTAVE      'o'
 #define format_LIBSVM      'S'
 #define format_MGZ         'Z'
 

@@ -24,8 +24,10 @@ int malloc_F1v( int size, F1** _vec, char clr )
   { return mem(size*sizeof(F1),clr,(char**)_vec); }
 int malloc_D1v( int size, D1** _vec, char clr )
   { return mem(size*sizeof(D1),clr,(char**)_vec); }
-int malloc_IF1v( int size, IF1** _vec, char clr )
-  { return mem(size*sizeof(IF1),clr,(char**)_vec); }
+int malloc_iI1v( int size, iI1** _vec, char clr )
+  { return mem(size*sizeof(iI1),clr,(char**)_vec); }
+int malloc_iF1v( int size, iF1** _vec, char clr )
+  { return mem(size*sizeof(iF1),clr,(char**)_vec); }
 
 int malloc_graym( int imW, int imH, gray*** _im, char clr )
   { return mmem(imW,imH,sizeof(gray),clr,(char***)_im); }

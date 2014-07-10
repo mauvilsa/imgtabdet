@@ -204,7 +204,7 @@ int fscanMATHead( FILE* file, int* _R, int* _C, char* _name, char* _type, int* _
           elements = 2;
         else if( sscanf(buffer+8,"%d-tuple matrix",&elements) != 1 )
           return EXIT_FAILURE;
-        format = format_MAT;
+        format = format_OCTAVE;
       }
       else if( ! strncmp(buffer,"# rows: ",8) )
         R = atoi(buffer+8);
@@ -307,7 +307,7 @@ int fscanMAT( char type, int elements, FILE* file, char*** _matrix, int* _R, int
         z += fscanf_tuple(type,elements,size,file,p);
     break;
 
-  case format_MAT:
+  case format_OCTAVE:
     Esize = size*elements;
     Csize = R*Esize;
     for( r=R-1; r>=0; r--, mat+=Esize )
@@ -375,7 +375,7 @@ int fprintMAT( char type, int elements, FILE* file, char** matrix, int R, int C,
     }
     break;
 
-  case format_MAT:
+  case format_OCTAVE:
     fprintf(file,"# name: %s\n",name!=NULL?name:"data");
     if( elements <= 2 )
       fprintf(file,"# type: %smatrix\n",elements==1?"":"complex");
