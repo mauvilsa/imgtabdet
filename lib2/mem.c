@@ -15,9 +15,15 @@
 void bfree( void* mat, int brd )
   { free((char**)mat-brd); }
 
-int clone_graym( gray** mat, int R, int C, gray*** _clon )
-  { return mclone((char**)mat,R,C,sizeof(gray),(char***)_clon); }
+int clone_graym( gray** mat, int imW, int imH, gray*** _clon )
+  { return mclone((char**)mat,imW,imH,sizeof(gray),(char***)_clon); }
+int clone_pixelm( pixel** mat, int imW, int imH, pixel*** _clon )
+  { return mclone((char**)mat,imW,imH,sizeof(pixel),(char***)_clon); }
 
+int malloc_grayv( int size, gray** _vec, char clr )
+  { return mem(size*sizeof(gray),clr,(char**)_vec); }
+int malloc_pixelv( int size, pixel** _vec, char clr )
+  { return mem(size*sizeof(pixel),clr,(char**)_vec); }
 int malloc_I1v( int size, I1** _vec, char clr )
   { return mem(size*sizeof(I1),clr,(char**)_vec); }
 int malloc_F1v( int size, F1** _vec, char clr )
@@ -28,6 +34,8 @@ int malloc_iI1v( int size, iI1** _vec, char clr )
   { return mem(size*sizeof(iI1),clr,(char**)_vec); }
 int malloc_iF1v( int size, iF1** _vec, char clr )
   { return mem(size*sizeof(iF1),clr,(char**)_vec); }
+int malloc_IV2v( int size, IV2** _vec, char clr )
+  { return mem(size*sizeof(IV2),clr,(char**)_vec); }
 
 int malloc_graym( int imW, int imH, gray*** _im, char clr )
   { return mmem(imW,imH,sizeof(gray),clr,(char***)_im); }
