@@ -248,6 +248,15 @@ int togray_magick( Img* img ) {
   return img->is_gray ? SUCCESS : FAILURE;
 }
 
+void set_density_magick( Img* img, double density ) {
+  img->res_x = density;
+  img->res_y = density;
+  img->image->x_resolution = density;
+  img->image->y_resolution = density;
+  img->image->units = PixelsPerCentimeterResolution;
+  img->info->units = PixelsPerCentimeterResolution;
+}
+
 int add_border_magick( Img* img, int size, PixelPacket color ) {
   ExceptionInfo *exception = AcquireExceptionInfo();
   const RectangleInfo bord = { size, size, 0, 0 };

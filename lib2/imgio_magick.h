@@ -37,6 +37,8 @@ int getpixels_magick_cv8u( Img* img, IplImage* cvimg );
 int setpixels_magick_cv8u( Img* img, IplImage* cvimg );
 
 int togray_magick( Img* img );
+void set_density_magick( Img* img, double density );
+
 int add_border_magick( Img* img, int size, PixelPacket color );
 
 #endif
