@@ -149,7 +149,7 @@ int printimg_magick( FILE* file, char* format, Img* img, FILE* logfile ) {
   return SUCCESS;
 }
 
-int getpixels_magick_graym( Img* img, gray** gimg ) {
+int getpixels_magick_graym( Img* img, gray* gimg ) {
   ExceptionInfo *exception = AcquireExceptionInfo();
   const PixelPacket *pixs =
     GetVirtualPixels( img->image, 0, 0, img->width, img->height, exception );
@@ -163,57 +163,29 @@ int getpixels_magick_graym( Img* img, gray** gimg ) {
 
   int n;
   for( n=img->width*img->height-1; n>=0; n-- )
-    gimg[0][n] = GetPixelGray(pixs+n) >> 8; // will only work with Q16
+    gimg[n] = GetPixelGray(pixs+n) >> 8; // will only work with Q16
 
   return SUCCESS;
 }
 
-int setpixels_magick_graym( Img* img, gray** gimg ) {
+int setpixels_magick_graym( Img* img, gray* gimg ) {
   ExceptionInfo *exception = AcquireExceptionInfo();
 
-  /// @todo this discards all previous metadata, how to preserve it? ///
-  if( img->image != NULL )
-    DestroyImage( img->image );
-  img->image = ConstituteImage( img->width, img->height, "I", CharPixel, gimg[0], exception );
-
-/*
-  /// @todo only works by creating new image, why ??? ///
-  if( img->image != NULL )
-    DestroyImage( img->image );
-  MagickPixelPacket black;
-  QueryMagickColor("black", &black, exception);
-  if( exception->severity != UndefinedException ) {
-    CatchException( exception );
-    DestroyExceptionInfo( exception );
-    return FAILURE;
-  }
-  img->image = NewMagickImage( img->info, img->width, img->height, &black );
-
-  PixelPacket *pixs =
-    QueueAuthenticPixels( img->image, 0, 0, img->width, img->height, exception );
-  //  GetAuthenticPixels( img->image, 0, 0, img->width, img->height, exception );
+  Image *pimage = img->image;
+  img->image = ConstituteImage( img->width, img->height, "I", CharPixel, gimg, exception );
 
   if( exception->severity != UndefinedException ) {
     CatchException( exception );
     DestroyExceptionInfo( exception );
     return FAILURE;
   }
-
-  int n;
-  for( n=img->width*img->height-1; n>=0; n-- )
-    SetPixelGray( pixs+n, ((int)gimg[0][n]) << 8 ); // will only work with Q16
-
-  if( SyncAuthenticPixels( img->image, exception ) != MagickTrue )
-    return FAILURE;
-*/
-
-  if( exception->severity != UndefinedException ) {
-    CatchException( exception );
-    DestroyExceptionInfo( exception );
-    return FAILURE;
-  }
-
   DestroyExceptionInfo( exception );
+
+  if( pimage != NULL ) {
+    CloneImageProperties( img->image, pimage );
+    CloneImageProfiles( img->image, pimage );
+    DestroyImage( pimage );
+  }
 
   return SUCCESS;
 }
@@ -241,55 +213,20 @@ int getpixels_magick_cv8u( Img* img, IplImage* cvimg ) {
 }
 
 int setpixels_magick_cv8u( Img* img, IplImage* cvimg ) {
-  ExceptionInfo *exception = AcquireExceptionInfo();
-
-  /// @todo this discards all previous metadata, how to preserve it? ///
-  /*if( img->image != NULL )
-    DestroyImage( img->image );
-  img->image = ConstituteImage( img->width, img->height, "I", CharPixel, (gray*)cvimg->imageData, exception );*/
-
-
-  /// @todo only works by creating new image, why ??? ///
-  if( img->image != NULL )
-    DestroyImage( img->image );
-  MagickPixelPacket black;
-  QueryMagickColor("black", &black, exception);
-  if( exception->severity != UndefinedException ) {
-    CatchException( exception );
-    DestroyExceptionInfo( exception );
+  gray *gimg = NULL;
+  if( malloc_grayv( img->width*img->height, &gimg, FALSE ) )
     return FAILURE;
-  }
-  img->image = NewMagickImage( img->info, img->width, img->height, &black );
-
-  PixelPacket *pixs =
-    QueueAuthenticPixels( img->image, 0, 0, img->width, img->height, exception );
-  //  GetAuthenticPixels( img->image, 0, 0, img->width, img->height, exception );
-
-  if( exception->severity != UndefinedException ) {
-    CatchException( exception );
-    DestroyExceptionInfo( exception );
-    return FAILURE;
-  }
-
-  gray *ptr = (gray*)cvimg->imageData;
 
   int x,y,n;
   for( y=0,n=0; y<cvimg->imageSize; y+=cvimg->widthStep )
     for( x=0; x<img->width; x++,n++ )
-      SetPixelGray( pixs+n, ((int)ptr[y+x]) << 8 ); // will only work with Q16
+      gimg[n] = cvimg->imageData[y+x];
 
-  if( SyncAuthenticPixels( img->image, exception ) != MagickTrue )
-    return FAILURE;
+  int err = setpixels_magick_graym( img, gimg );
 
-  if( exception->severity != UndefinedException ) {
-    CatchException( exception );
-    DestroyExceptionInfo( exception );
-    return FAILURE;
-  }
+  free(gimg);
 
-  DestroyExceptionInfo( exception );
-
-  return SUCCESS;
+  return err;
 }
 
 int togray_magick( Img* img ) {
