@@ -31,6 +31,7 @@ int scanimg_magick( FILE* file, Img** _img, FILE* logfile );
 int writeimg_magick( char* fname, Img* img, FILE* logfile );
 int printimg_magick( FILE* file, char* format, Img* img, FILE* logfile );
 
+int getalpha_magick_graym( Img* img, gray* gimg );
 int getpixels_magick_graym( Img* img, gray* gimg );
 int setpixels_magick_graym( Img* img, gray* gimg );
 int getpixels_magick_cv8u( Img* img, IplImage* cvimg );

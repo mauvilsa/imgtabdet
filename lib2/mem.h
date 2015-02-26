@@ -22,6 +22,9 @@
 #define SUCCESS 0
 #endif
 
+#define IMGIO_GRAYMAX 255
+#define limit_gray(a) (gray)(((a)<0?0:(a))>IMGIO_GRAYMAX?IMGIO_GRAYMAX:((a)<0?0:(a)))
+
 typedef int I1;
 typedef float F1;
 typedef double D1;
@@ -58,6 +61,14 @@ typedef struct {
 } IV2;
 
 void bfree( void* mat, int brd );
+
+void zeros_I1( I1* vec, int D );
+void zeros_F1( F1* vec, int D );
+void zeros_D1( D1* vec, int D );
+
+void copy_I1( I1* src, int D, I1* des );
+void copy_F1( F1* src, int D, F1* des );
+void copy_D1( D1* src, int D, D1* des );
 
 int clone_graym( gray** mat, int imW, int imH, gray*** _clon );
 int clone_pixelm( pixel** mat, int imW, int imH, pixel*** _clon );

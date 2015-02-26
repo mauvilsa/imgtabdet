@@ -15,6 +15,20 @@
 void bfree( void* mat, int brd )
   { free((char**)mat-brd); }
 
+void zeros_I1( I1* vec, int D )
+  { memset(vec,0,D*sizeof(I1)); }
+void zeros_F1( F1* vec, int D )
+  { memset(vec,0,D*sizeof(F1)); }
+void zeros_D1( D1* vec, int D )
+  { memset(vec,0,D*sizeof(D1)); }
+
+void copy_I1( I1* src, int D, I1* des )
+  { memcpy(des,src,D*sizeof(I1)); }
+void copy_F1( F1* src, int D, F1* des )
+  { memcpy(des,src,D*sizeof(F1)); }
+void copy_D1( D1* src, int D, D1* des )
+  { memcpy(des,src,D*sizeof(D1)); }
+
 int clone_graym( gray** mat, int imW, int imH, gray*** _clon )
   { return mclone((char**)mat,imW,imH,sizeof(gray),(char***)_clon); }
 int clone_pixelm( pixel** mat, int imW, int imH, pixel*** _clon )

@@ -7,8 +7,6 @@
 
 #include "imgio_magick.h"
 
-#include <flann/flann.h>
-
 //#define CM_PER_IN 2.54
 #define IN_PER_CM 0.39370078740157480314
 
@@ -149,6 +147,36 @@ int printimg_magick( FILE* file, char* format, Img* img, FILE* logfile ) {
   return SUCCESS;
 }
 
+int getalpha_magick_graym( Img* img, gray* gimg ) {
+  if( img->is_opaque )
+    return FALSE;
+
+  ExceptionInfo *exception = AcquireExceptionInfo();
+  const PixelPacket *pixs = NULL;
+
+  Image *alph = CloneImage( img->image, 0, 0, MagickTrue, exception );
+
+  if( exception->severity != UndefinedException )
+    if( GetImageAlphaChannel( alph ) )
+      pixs = GetVirtualPixels( alph, 0, 0, img->width, img->height, exception );
+
+  if( exception->severity != UndefinedException ) {
+    CatchException( exception );
+    DestroyExceptionInfo( exception );
+    DestroyImage( alph );
+    return FAILURE;
+  }
+  DestroyExceptionInfo( exception );
+
+  int n;
+  for( n=img->width*img->height-1; n>=0; n-- )
+    gimg[n] = GetPixelGray(pixs+n) >> 8; // will only work with Q16
+
+  DestroyImage( alph );
+
+  return SUCCESS;
+}
+
 int getpixels_magick_graym( Img* img, gray* gimg ) {
   ExceptionInfo *exception = AcquireExceptionInfo();
   const PixelPacket *pixs =
@@ -168,10 +196,15 @@ int getpixels_magick_graym( Img* img, gray* gimg ) {
   return SUCCESS;
 }
 
+
+
+
+
 int setpixels_magick_graym( Img* img, gray* gimg ) {
   ExceptionInfo *exception = AcquireExceptionInfo();
 
   Image *pimage = img->image;
+
   img->image = ConstituteImage( img->width, img->height, "I", CharPixel, gimg, exception );
 
   if( exception->severity != UndefinedException ) {
