@@ -12,7 +12,7 @@
 
 #include <stdio.h>
 #include <magick/MagickCore.h>
-#include <opencv2/imgproc/imgproc_c.h>
+//#include <opencv2/imgproc/imgproc_c.h>
 
 typedef struct {
   int width; // image width in pixels
@@ -34,8 +34,6 @@ int printimg_magick( FILE* file, char* format, Img* img, FILE* logfile );
 int getalpha_magick_graym( Img* img, gray* gimg );
 int getpixels_magick_graym( Img* img, gray* gimg );
 int setpixels_magick_graym( Img* img, gray* gimg );
-int getpixels_magick_cv8u( Img* img, IplImage* cvimg );
-int setpixels_magick_cv8u( Img* img, IplImage* cvimg );
 
 int togray_magick( Img* img );
 void set_density_magick( Img* img, double density );

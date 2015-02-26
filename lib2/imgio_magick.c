@@ -7,7 +7,7 @@
 
 #include "imgio_magick.h"
 
-//#define CM_PER_IN 2.54
+#define CM_PER_IN 2.54
 #define IN_PER_CM 0.39370078740157480314
 
 void free_Img( Img *img ) {
@@ -196,10 +196,6 @@ int getpixels_magick_graym( Img* img, gray* gimg ) {
   return SUCCESS;
 }
 
-
-
-
-
 int setpixels_magick_graym( Img* img, gray* gimg ) {
   ExceptionInfo *exception = AcquireExceptionInfo();
 
@@ -223,7 +219,11 @@ int setpixels_magick_graym( Img* img, gray* gimg ) {
   return SUCCESS;
 }
 
-int getpixels_magick_cv8u( Img* img, IplImage* cvimg ) {
+int togray_magick( Img* img ) {
+  gray *gimg = NULL;
+  if( malloc_grayv( img->width*img->height, &gimg, FALSE ) )
+    return FAILURE;
+
   ExceptionInfo *exception = AcquireExceptionInfo();
   const PixelPacket *pixs =
     GetVirtualPixels( img->image, 0, 0, img->width, img->height, exception );
@@ -235,34 +235,26 @@ int getpixels_magick_cv8u( Img* img, IplImage* cvimg ) {
   }
   DestroyExceptionInfo( exception );
 
-  gray *ptr = (gray*)cvimg->imageData;
-
-  int x,y,n;
-  for( y=0,n=0; y<cvimg->imageSize; y+=cvimg->widthStep )
-    for( x=0; x<img->width; x++,n++ )
-      ptr[y+x] = GetPixelGray(pixs+n) >> 8; // will only work with Q16
-
-  return SUCCESS;
-}
-
-int setpixels_magick_cv8u( Img* img, IplImage* cvimg ) {
-  gray *gimg = NULL;
-  if( malloc_grayv( img->width*img->height, &gimg, FALSE ) )
-    return FAILURE;
-
-  int x,y,n;
-  for( y=0,n=0; y<cvimg->imageSize; y+=cvimg->widthStep )
-    for( x=0; x<img->width; x++,n++ )
-      gimg[n] = cvimg->imageData[y+x];
+  int n;
+  for( n=img->width*img->height-1; n>=0; n-- )
+    gimg[n] = (gray)( 0.5 +
+              0.299*(GetPixelRed(pixs+n)>>8) +
+              0.587*(GetPixelGreen(pixs+n)>>8) +
+              0.114*(GetPixelBlue(pixs+n)>>8) ); // will only work with Q16
 
   int err = setpixels_magick_graym( img, gimg );
+
+  SetImageProperty(img->image,"colorspace","Gray");
+  img->info->colorspace = GRAYColorspace;
+  img->is_gray = IsGrayImage( img->image, exception );
+  //printf( "image %s in grayscale\n", img->is_gray ? "is" : "is NOT" );
 
   free(gimg);
 
   return err;
 }
 
-int togray_magick( Img* img ) {
+/*int togray_magick( Img* img ) {
   if( img->is_gray )
     return SUCCESS;
 
@@ -279,7 +271,7 @@ int togray_magick( Img* img ) {
   DestroyExceptionInfo( exception );
 
   return img->is_gray ? SUCCESS : FAILURE;
-}
+}*/
 
 void set_density_magick( Img* img, double density ) {
   img->res_x = density;
