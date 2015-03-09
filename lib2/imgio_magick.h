@@ -12,7 +12,6 @@
 
 #include <stdio.h>
 #include <magick/MagickCore.h>
-//#include <opencv2/imgproc/imgproc_c.h>
 
 typedef struct {
   int width; // image width in pixels
@@ -26,6 +25,7 @@ typedef struct {
 } Img;
 
 void free_Img( Img *img );
+Img* create_img( ImageInfo* image_info, Image* image );
 int readimg_magick( char* fname, Img** _img, FILE* logfile );
 int scanimg_magick( FILE* file, Img** _img, FILE* logfile );
 int writeimg_magick( char* fname, Img* img, FILE* logfile );

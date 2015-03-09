@@ -152,27 +152,19 @@ int getalpha_magick_graym( Img* img, gray* gimg ) {
     return FALSE;
 
   ExceptionInfo *exception = AcquireExceptionInfo();
-  const PixelPacket *pixs = NULL;
-
-  Image *alph = CloneImage( img->image, 0, 0, MagickTrue, exception );
-
-  if( exception->severity != UndefinedException )
-    if( GetImageAlphaChannel( alph ) )
-      pixs = GetVirtualPixels( alph, 0, 0, img->width, img->height, exception );
+  const PixelPacket *pixs =
+    GetVirtualPixels( img->image, 0, 0, img->width, img->height, exception );
 
   if( exception->severity != UndefinedException ) {
     CatchException( exception );
     DestroyExceptionInfo( exception );
-    DestroyImage( alph );
     return FAILURE;
   }
   DestroyExceptionInfo( exception );
 
   int n;
   for( n=img->width*img->height-1; n>=0; n-- )
-    gimg[n] = GetPixelGray(pixs+n) >> 8; // will only work with Q16
-
-  DestroyImage( alph );
+    gimg[n] = GetPixelAlpha(pixs+n) >> 8; // will only work with Q16
 
   return SUCCESS;
 }
