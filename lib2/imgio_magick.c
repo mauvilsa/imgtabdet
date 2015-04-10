@@ -211,6 +211,42 @@ int setpixels_magick_graym( Img* img, gray* gimg ) {
   return SUCCESS;
 }
 
+int setpixels_magick_grayalphm( Img* img, gray* gimg, gray* alph ) {
+  ExceptionInfo *exception = AcquireExceptionInfo();
+
+  Image *pimage = img->image;
+
+  int n, WH = img->width*img->height;
+
+  gray* gaimg = NULL;
+  if( malloc_grayv( WH+WH, &gaimg, FALSE ) )
+    return FAILURE;
+
+  for( n=0; n<WH; n++ ) {
+    gaimg[n+n] = gimg[n];
+    gaimg[n+n+1] = alph[n];
+  }
+
+  img->image = ConstituteImage( img->width, img->height, "IA", CharPixel, gaimg, exception );
+
+  if( exception->severity != UndefinedException ) {
+    CatchException( exception );
+    DestroyExceptionInfo( exception );
+    free( gaimg );
+    return FAILURE;
+  }
+  DestroyExceptionInfo( exception );
+  free( gaimg );
+
+  if( pimage != NULL ) {
+    CloneImageProperties( img->image, pimage );
+    CloneImageProfiles( img->image, pimage );
+    DestroyImage( pimage );
+  }
+
+  return SUCCESS;
+}
+
 int togray_magick( Img* img ) {
   gray *gimg = NULL;
   if( malloc_grayv( img->width*img->height, &gimg, FALSE ) )
