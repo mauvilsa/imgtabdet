@@ -59,7 +59,13 @@ int malloc_I1m( int R, int C, I1*** _mat, char clr )
   { return mmem(R,C,sizeof(I1),clr,(char***)_mat); }
 int malloc_F1m( int R, int C, F1*** _mat, char clr )
   { return mmem(R,C,sizeof(F1),clr,(char***)_mat); }
+int malloc_D1m( int R, int C, D1*** _mat, char clr )
+  { return mmem(R,C,sizeof(D1),clr,(char***)_mat); }
 
+int malloc_F1t( int D, F1*** _mat, char clr )
+  { return tmem(D,sizeof(F1),clr,(char***)_mat); }
+int malloc_D1t( int D, D1*** _mat, char clr )
+  { return tmem(D,sizeof(D1),clr,(char***)_mat); }
 
 void nullfree(void* ptr) {
   void** p = (void**)ptr;

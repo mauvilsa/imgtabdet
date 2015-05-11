@@ -188,6 +188,28 @@ int getpixels_magick_graym( Img* img, gray* gimg ) {
   return SUCCESS;
 }
 
+int getpixels_magick_pixelm( Img* img, pixel* cimg ) {
+  ExceptionInfo *exception = AcquireExceptionInfo();
+  const PixelPacket *pixs =
+    GetVirtualPixels( img->image, 0, 0, img->width, img->height, exception );
+
+  if( exception->severity != UndefinedException ) {
+    CatchException( exception );
+    DestroyExceptionInfo( exception );
+    return FAILURE;
+  }
+  DestroyExceptionInfo( exception );
+
+  int n;
+  for( n=img->width*img->height-1; n>=0; n-- ) {
+    cimg[n].r = GetPixelRed(pixs+n) >> 8; // will only work with Q16
+    cimg[n].g = GetPixelGreen(pixs+n) >> 8; // will only work with Q16
+    cimg[n].b = GetPixelBlue(pixs+n) >> 8; // will only work with Q16
+  }
+
+  return SUCCESS;
+}
+
 int setpixels_magick_graym( Img* img, gray* gimg ) {
   ExceptionInfo *exception = AcquireExceptionInfo();
 
@@ -237,6 +259,29 @@ int setpixels_magick_grayalphm( Img* img, gray* gimg, gray* alph ) {
   }
   DestroyExceptionInfo( exception );
   free( gaimg );
+
+  if( pimage != NULL ) {
+    CloneImageProperties( img->image, pimage );
+    CloneImageProfiles( img->image, pimage );
+    DestroyImage( pimage );
+  }
+
+  return SUCCESS;
+}
+
+int setpixels_magick_pixelm( Img* img, pixel* cimg ) {
+  ExceptionInfo *exception = AcquireExceptionInfo();
+
+  Image *pimage = img->image;
+
+  img->image = ConstituteImage( img->width, img->height, "RGB", CharPixel, cimg, exception );
+
+  if( exception->severity != UndefinedException ) {
+    CatchException( exception );
+    DestroyExceptionInfo( exception );
+    return FAILURE;
+  }
+  DestroyExceptionInfo( exception );
 
   if( pimage != NULL ) {
     CloneImageProperties( img->image, pimage );

@@ -33,8 +33,10 @@ int printimg_magick( FILE* file, char* format, Img* img, FILE* logfile );
 
 int getalpha_magick_graym( Img* img, gray* gimg );
 int getpixels_magick_graym( Img* img, gray* gimg );
+int getpixels_magick_pixelm( Img* img, pixel* cimg );
 int setpixels_magick_graym( Img* img, gray* gimg );
 int setpixels_magick_grayalphm( Img* img, gray* gimg, gray* alph );
+int setpixels_magick_pixelm( Img* img, pixel* cimg );
 
 int togray_magick( Img* img );
 void set_density_magick( Img* img, double density );

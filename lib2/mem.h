@@ -86,6 +86,10 @@ int malloc_graym( int imW, int imH, gray*** _im, char clr );
 int malloc_pixelm( int imW, int imH, pixel*** _im, char clr );
 int malloc_I1m( int R, int C, I1*** _mat, char clr );
 int malloc_F1m( int R, int C, F1*** _mat, char clr );
+int malloc_D1m( int R, int C, D1*** _mat, char clr );
+
+int malloc_F1t( int D, F1*** _mat, char clr );
+int malloc_D1t( int D, D1*** _mat, char clr );
 
 void nullfree(void* ptr);
 int mclone(char** mat, int R, int C, int size, char*** _clon);
