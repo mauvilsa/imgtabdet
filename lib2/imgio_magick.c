@@ -164,7 +164,11 @@ int getalpha_magick_graym( Img* img, gray* gimg ) {
 
   int n;
   for( n=img->width*img->height-1; n>=0; n-- )
-    gimg[n] = GetPixelAlpha(pixs+n) >> 8; // will only work with Q16
+#if MAGICKCORE_QUANTUM_DEPTH == 16
+    gimg[n] = GetPixelAlpha(pixs+n) >> 8;
+#elif MAGICKCORE_QUANTUM_DEPTH == 8
+    gimg[n] = GetPixelAlpha(pixs+n);
+#endif
 
   return SUCCESS;
 }
@@ -183,7 +187,11 @@ int getpixels_magick_graym( Img* img, gray* gimg ) {
 
   int n;
   for( n=img->width*img->height-1; n>=0; n-- )
-    gimg[n] = GetPixelGray(pixs+n) >> 8; // will only work with Q16
+#if MAGICKCORE_QUANTUM_DEPTH == 16
+    gimg[n] = GetPixelGray(pixs+n) >> 8;
+#elif MAGICKCORE_QUANTUM_DEPTH == 8
+    gimg[n] = GetPixelGray(pixs+n);
+#endif
 
   return SUCCESS;
 }
@@ -202,9 +210,15 @@ int getpixels_magick_pixelm( Img* img, pixel* cimg ) {
 
   int n;
   for( n=img->width*img->height-1; n>=0; n-- ) {
-    cimg[n].r = GetPixelRed(pixs+n) >> 8; // will only work with Q16
-    cimg[n].g = GetPixelGreen(pixs+n) >> 8; // will only work with Q16
-    cimg[n].b = GetPixelBlue(pixs+n) >> 8; // will only work with Q16
+#if MAGICKCORE_QUANTUM_DEPTH == 16
+    cimg[n].r = GetPixelRed(pixs+n) >> 8;
+    cimg[n].g = GetPixelGreen(pixs+n) >> 8;
+    cimg[n].b = GetPixelBlue(pixs+n) >> 8;
+#elif MAGICKCORE_QUANTUM_DEPTH == 8
+    cimg[n].r = GetPixelRed(pixs+n);
+    cimg[n].g = GetPixelGreen(pixs+n);
+    cimg[n].b = GetPixelBlue(pixs+n);
+#endif
   }
 
   return SUCCESS;
@@ -310,10 +324,17 @@ int togray_magick( Img* img ) {
 
   int n;
   for( n=img->width*img->height-1; n>=0; n-- )
+#if MAGICKCORE_QUANTUM_DEPTH == 16
     gimg[n] = (gray)( 0.5 +
               0.299*(GetPixelRed(pixs+n)>>8) +
               0.587*(GetPixelGreen(pixs+n)>>8) +
-              0.114*(GetPixelBlue(pixs+n)>>8) ); // will only work with Q16
+              0.114*(GetPixelBlue(pixs+n)>>8) );
+#elif MAGICKCORE_QUANTUM_DEPTH == 8
+    gimg[n] = (gray)( 0.5 +
+              0.299*(GetPixelRed(pixs+n)) +
+              0.587*(GetPixelGreen(pixs+n)) +
+              0.114*(GetPixelBlue(pixs+n)) );
+#endif
 
   int err = setpixels_magick_graym( img, gimg );
 
