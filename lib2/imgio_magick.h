@@ -13,6 +13,23 @@
 #include <stdio.h>
 #include <magick/MagickCore.h>
 
+#ifndef GetPixelGray
+#define GetPixelAlpha(pixel) (QuantumRange-(pixel)->opacity)
+#define GetPixelGray(pixel) ((pixel)->red)
+#define GetPixelRed(pixel) ((pixel)->red)
+#define GetPixelGreen(pixel) ((pixel)->green)
+#define GetPixelBlue(pixel) ((pixel)->blue)
+#define SetPixelGreen(pixel,value) ((pixel)->green=(Quantum) (value))
+#define SetPixelBlue(pixel,value) ((pixel)->blue=(Quantum) (value))
+#define SetPixelRed(pixel,value) ((pixel)->red=(Quantum) (value))
+#define SetPixelRgb(pixel,packet) \
+{ \
+  SetPixelRed(pixel,(packet)->red); \
+  SetPixelGreen(pixel,(packet)->green); \
+  SetPixelBlue(pixel,(packet)->blue); \
+}
+#endif
+
 typedef struct {
   int width; // image width in pixels
   int height; // image height in pixels
