@@ -21,11 +21,8 @@ Img* create_img( ImageInfo* image_info, Image* image ) {
   unsigned char is_gray = IsGrayImage( image, exception );
   unsigned char is_opaque = IsOpaqueImage( image, exception );
 
-  if( exception->severity != UndefinedException ) {
+  if( exception->severity != UndefinedException )
     CatchException( exception );
-    DestroyExceptionInfo( exception );
-    return NULL;
-  }
   DestroyExceptionInfo( exception );
 
   //IdentifyImage(image,stderr,MagickTrue);
@@ -64,12 +61,8 @@ int readimg_magick( char* fname, Img** _img, FILE* logfile ) {
   CopyMagickString( image_info->filename, fname, MaxTextExtent );
   Image *image = ReadImage( image_info, exception );
 
-  if( exception->severity != UndefinedException ) {
+  if( exception->severity != UndefinedException )
     CatchException( exception );
-    DestroyImageInfo( image_info );
-    DestroyExceptionInfo( exception );
-    return FAILURE;
-  }
   DestroyExceptionInfo( exception );
 
   if( image == NULL ) {
@@ -96,12 +89,8 @@ int scanimg_magick( FILE* file, Img** _img, FILE* logfile ) {
   image_info->file = file;
   Image *image = ReadImage( image_info, exception );
 
-  if( exception->severity != UndefinedException ) {
+  if( exception->severity != UndefinedException )
     CatchException( exception );
-    DestroyImageInfo( image_info );
-    DestroyExceptionInfo( exception );
-    return FAILURE;
-  }
   DestroyExceptionInfo( exception );
 
   if( image == (Image*)NULL ) {
@@ -155,11 +144,8 @@ int getalpha_magick_graym( Img* img, gray* gimg ) {
   const PixelPacket *pixs =
     GetVirtualPixels( img->image, 0, 0, img->width, img->height, exception );
 
-  if( exception->severity != UndefinedException ) {
+  if( exception->severity != UndefinedException )
     CatchException( exception );
-    DestroyExceptionInfo( exception );
-    return FAILURE;
-  }
   DestroyExceptionInfo( exception );
 
   int n;
@@ -178,11 +164,8 @@ int getpixels_magick_graym( Img* img, gray* gimg ) {
   const PixelPacket *pixs =
     GetVirtualPixels( img->image, 0, 0, img->width, img->height, exception );
 
-  if( exception->severity != UndefinedException ) {
+  if( exception->severity != UndefinedException )
     CatchException( exception );
-    DestroyExceptionInfo( exception );
-    return FAILURE;
-  }
   DestroyExceptionInfo( exception );
 
   int n;
@@ -201,11 +184,8 @@ int getpixels_magick_pixelm( Img* img, pixel* cimg ) {
   const PixelPacket *pixs =
     GetVirtualPixels( img->image, 0, 0, img->width, img->height, exception );
 
-  if( exception->severity != UndefinedException ) {
+  if( exception->severity != UndefinedException )
     CatchException( exception );
-    DestroyExceptionInfo( exception );
-    return FAILURE;
-  }
   DestroyExceptionInfo( exception );
 
   int n;
@@ -231,11 +211,8 @@ int setpixels_magick_graym( Img* img, gray* gimg ) {
 
   img->image = ConstituteImage( img->width, img->height, "I", CharPixel, gimg, exception );
 
-  if( exception->severity != UndefinedException ) {
+  if( exception->severity != UndefinedException )
     CatchException( exception );
-    DestroyExceptionInfo( exception );
-    return FAILURE;
-  }
   DestroyExceptionInfo( exception );
 
   if( pimage != NULL ) {
@@ -265,12 +242,8 @@ int setpixels_magick_grayalphm( Img* img, gray* gimg, gray* alph ) {
 
   img->image = ConstituteImage( img->width, img->height, "IA", CharPixel, gaimg, exception );
 
-  if( exception->severity != UndefinedException ) {
+  if( exception->severity != UndefinedException )
     CatchException( exception );
-    DestroyExceptionInfo( exception );
-    free( gaimg );
-    return FAILURE;
-  }
   DestroyExceptionInfo( exception );
   free( gaimg );
 
@@ -290,11 +263,8 @@ int setpixels_magick_pixelm( Img* img, pixel* cimg ) {
 
   img->image = ConstituteImage( img->width, img->height, "RGB", CharPixel, cimg, exception );
 
-  if( exception->severity != UndefinedException ) {
+  if( exception->severity != UndefinedException )
     CatchException( exception );
-    DestroyExceptionInfo( exception );
-    return FAILURE;
-  }
   DestroyExceptionInfo( exception );
 
   if( pimage != NULL ) {
@@ -315,11 +285,8 @@ int togray_magick( Img* img ) {
   const PixelPacket *pixs =
     GetVirtualPixels( img->image, 0, 0, img->width, img->height, exception );
 
-  if( exception->severity != UndefinedException ) {
+  if( exception->severity != UndefinedException )
     CatchException( exception );
-    DestroyExceptionInfo( exception );
-    return FAILURE;
-  }
   DestroyExceptionInfo( exception );
 
   int n;
@@ -357,11 +324,8 @@ int togray_magick( Img* img ) {
   ExceptionInfo *exception = AcquireExceptionInfo();
   img->is_gray = IsGrayImage( img->image, exception );
 
-  if( exception->severity != UndefinedException ) {
+  if( exception->severity != UndefinedException )
     CatchException( exception );
-    DestroyExceptionInfo( exception );
-    return FAILURE;
-  }
   DestroyExceptionInfo( exception );
 
   return img->is_gray ? SUCCESS : FAILURE;
@@ -383,11 +347,8 @@ int add_border_magick( Img* img, int size, PixelPacket color ) {
   img->image->border_color = color;
 
   Image *bimg = BorderImage( img->image, &bord, exception );
-  if( exception->severity != UndefinedException ) {
+  if( exception->severity != UndefinedException )
     CatchException( exception );
-    DestroyExceptionInfo( exception );
-    return FAILURE;
-  }
   DestroyExceptionInfo( exception );
 
   DestroyImage( img->image );
