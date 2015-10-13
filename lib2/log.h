@@ -8,6 +8,20 @@
 #ifndef __MV_LOG_H__
 #define __MV_LOG_H__
 
+#ifndef TRUE
+#define TRUE 1
+#endif
+#ifndef FALSE
+#define FALSE 0
+#endif
+
+#ifndef FAILURE
+#define FAILURE 1
+#endif
+#ifndef SUCCESS
+#define SUCCESS 0
+#endif
+
 #include <stdio.h>
 
 void _proxy_log(FILE *log_file, int log_level, int level, const char *fmt, ...)
