@@ -137,6 +137,8 @@ int tmem(int D,int size,char clr,char*** _mat) {
   int d;
   char **mat,*vec;
 
+  // nth column has n elements
+  // loop as for( d=0; d<D; d++ ) for( dd=0; dd<=d; dd++ )
   mat=(char**)malloc(D*sizeof(char*)+size*D*(D+1)/2);
   if(mat==NULL)
     return EXIT_FAILURE;
