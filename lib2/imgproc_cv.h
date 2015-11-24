@@ -10,11 +10,7 @@
 
 #include "imgio_magick.h"
 
-#ifdef CV20
-#include <opencv/cv.h>
-#else
 #include <opencv2/imgproc/imgproc_c.h>
-#endif
 
 int getpixels_magick_cv8u( Img* img, IplImage* cvimg );
 int setpixels_magick_cv8u( Img* img, IplImage* cvimg );

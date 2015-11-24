@@ -7,11 +7,7 @@
 
 #include "imgproc_cv.h"
 
-#ifdef CV20
-#include <opencv/cxflann.h>
-#else
 #include <opencv2/flann/flann.hpp>
-#endif
 
 int getpixels_magick_cv8u( Img* img, IplImage* cvimg ) {
   ExceptionInfo *exception = AcquireExceptionInfo();
