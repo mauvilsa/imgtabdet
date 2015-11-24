@@ -7,7 +7,11 @@
 
 #include "imgproc_cv.h"
 
+#ifdef CV20
+#include <opencv/cxflann.h>
+#else
 #include <opencv2/flann/flann.hpp>
+#endif
 
 int getpixels_magick_cv8u( Img* img, IplImage* cvimg ) {
   ExceptionInfo *exception = AcquireExceptionInfo();
@@ -156,9 +160,9 @@ int join_ccomp_opencv( Img *img ) {
       cv::Mat nnidx( N-nx, 1, CV_32S );
       cv::Mat nndst( N-nx, 1, CV_32F );
       cv::flann::Index flann_index( fref,
-        cv::flann::LinearIndexParams(),
+        cv::flann::LinearIndexParams() );//,
         //cv::flann::KDTreeIndexParams(4),
-        cvflann::FLANN_DIST_EUCLIDEAN );
+//        cvflann::FLANN_DIST_EUCLIDEAN );
 
       flann_index.knnSearch( ftest, nnidx, nndst, 1, cv::flann::SearchParams() );
 
