@@ -43,10 +43,10 @@ typedef struct {
 
 void free_Img( Img *img );
 Img* create_img( ImageInfo* image_info, Image* image );
-int readimg_magick( char* fname, Img** _img, FILE* logfile );
+int readimg_magick( char const* fname, Img** _img, FILE* logfile );
 int scanimg_magick( FILE* file, Img** _img, FILE* logfile );
-int writeimg_magick( char* fname, Img* img, FILE* logfile );
-int printimg_magick( FILE* file, char* format, Img* img, FILE* logfile );
+int writeimg_magick( char const* fname, Img* img, FILE* logfile );
+int printimg_magick( FILE* file, char const* format, Img* img, FILE* logfile );
 
 int getalpha_magick_graym( Img* img, gray* gimg );
 int getpixels_magick_graym( Img* img, gray* gimg );
@@ -58,6 +58,6 @@ int setpixels_magick_pixelm( Img* img, pixel* cimg );
 int togray_magick( Img* img );
 void set_density_magick( Img* img, double density );
 
-int add_border_magick( Img* img, int size, PixelPacket color );
+int add_border_magick( Img* img, size_t size, PixelPacket color );
 
 #endif

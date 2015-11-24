@@ -55,7 +55,7 @@ Img* create_img( ImageInfo* image_info, Image* image ) {
   return img;
 }
 
-int readimg_magick( char* fname, Img** _img, FILE* logfile ) {
+int readimg_magick( char const* fname, Img** _img, FILE* logfile ) {
   ExceptionInfo *exception = AcquireExceptionInfo();
   ImageInfo *image_info = CloneImageInfo( NULL );
   CopyMagickString( image_info->filename, fname, MaxTextExtent );
@@ -111,7 +111,7 @@ int scanimg_magick( FILE* file, Img** _img, FILE* logfile ) {
   return SUCCESS;
 }
 
-int writeimg_magick( char* fname, Img* img, FILE* logfile ) {
+int writeimg_magick( char const* fname, Img* img, FILE* logfile ) {
   CopyMagickString( img->image->filename, fname, MaxTextExtent );
   if( WriteImage( img->info, img->image ) == MagickFalse ) {
     fprintf( logfile, "%s: error: unable to write image: %s\n", "writeimg_magick", fname );
@@ -121,7 +121,7 @@ int writeimg_magick( char* fname, Img* img, FILE* logfile ) {
   return SUCCESS;
 }
 
-int printimg_magick( FILE* file, char* format, Img* img, FILE* logfile ) {
+int printimg_magick( FILE* file, char const* format, Img* img, FILE* logfile ) {
   char out[16];
   sprintf(out,"%s:out",format);
 
@@ -340,7 +340,7 @@ void set_density_magick( Img* img, double density ) {
   img->info->units = PixelsPerCentimeterResolution;
 }
 
-int add_border_magick( Img* img, int size, PixelPacket color ) {
+int add_border_magick( Img* img, size_t size, PixelPacket color ) {
   ExceptionInfo *exception = AcquireExceptionInfo();
   const RectangleInfo bord = { size, size, 0, 0 };
 
