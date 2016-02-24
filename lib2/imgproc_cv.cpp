@@ -9,6 +9,34 @@
 
 #include <opencv2/flann/flann.hpp>
 
+int getpixels_magick_cv8u1_mat( Img* img, cv::Mat& cvimg ) {
+  CV_Assert( cvimg.depth() == CV_8U ); // accept only char type matrices
+  CV_Assert( cvimg.channels() == 1 ); // accept only single channel matrices
+  CV_Assert( img->width == cvimg.cols );
+  CV_Assert( img->height == cvimg.rows );
+
+  ExceptionInfo *exception = AcquireExceptionInfo();
+  const PixelPacket *pixs =
+    GetVirtualPixels( img->image, 0, 0, img->width, img->height, exception );
+
+  if( exception->severity != UndefinedException )
+    CatchException( exception );
+  DestroyExceptionInfo( exception );
+
+  int x,y,n;
+  for( y=0,n=0; y<img->height; y++ ) {
+    uchar* ptr = cvimg.ptr<uchar>(y);
+    for( x=0; x<img->width; x++,n++ )
+#if MAGICKCORE_QUANTUM_DEPTH == 16
+      ptr[x] = GetPixelGray(pixs+n) >> 8;
+#elif MAGICKCORE_QUANTUM_DEPTH == 8
+      ptr[x] = GetPixelGray(pixs+n);
+#endif
+  }
+
+  return SUCCESS;
+}
+
 int getpixels_magick_cv8u( Img* img, IplImage* cvimg ) {
   ExceptionInfo *exception = AcquireExceptionInfo();
   const PixelPacket *pixs =
