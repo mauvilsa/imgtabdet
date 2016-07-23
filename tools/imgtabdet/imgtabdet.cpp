@@ -62,12 +62,17 @@ char const *tabname[] = { "top", "bottom", "left", "right" };
 char *ifn = NULL;
 char const *gb_units = "pixels";
 
-#define OUT_ASCII 0
-#define OUT_XMLPAGE 1
-
-int gb_format = OUT_ASCII;
+char ofn_stdout[] = "-";
+char *ofn_xmlpage = ofn_stdout;
+char *ofn_ascii = NULL;
 
 bool gb_opencv_lsd = false;
+
+int gb_level = 7;
+int gb_nbest = 1;
+
+double gb_corner_restX = 1.0;
+double gb_corner_restY = 1.0;
 
 double gb_pair_max_width = 5.0; // @todo make it depend on resolution
 double gb_join_max_sep = 100.0; // @todo make it depend on resolution
@@ -99,8 +104,12 @@ void print_usage( FILE *file ) {
 #ifdef ENABLE_OPENCV_LSD
   fprintf( file, "  -O              Use the opencv LSD implementation (def.=%s)\n", strbool(gb_opencv_lsd) );
 #endif
-  fprintf( file, "  -F FORMAT       Output format among: 'ascii', 'xmlpage' (def.=ascii)\n" );
+  fprintf( file, "  -N NBEST        Number of table detection hypothesis (def.=%d)\n", gb_nbest );
+  fprintf( file, "  -L LEVEL        Layout level: 1=segs, 2=joins, 3=polysegs, 4=polyfits, 5=pairups, 6=borders, 7=cells (def.=%d)\n", gb_level );
+  fprintf( file, "  -x XMLPAGE      File for Page XML output, to omit set as 'null' (def.=%s)\n", ofn_xmlpage == NULL ? "null" : "'-' i.e. stdout" );
+  fprintf( file, "  -o TEXTOUT      File for plain text output, to omit set as 'null' (def.=%s)\n", ofn_ascii == NULL ? "null" : "'-' i.e. stdout" );
   fprintf( file, "  -T tabdef       Table definition, {rows}x{cols}[,{rows}x{cols}] (def.=auto)\n" );
+  fprintf( file, "  -C restX,restY  Restrict table to image corners as factor of width/height (def.=false)\n" );
   fprintf( file, "  -D xsplit       Set double page with split at x=xsplit (def.=%s)\n", strbool(gb_twopage) );
   fprintf( file, "  -S sep          Maximum length of join segments (def.=%g %s)\n", gb_join_max_sep, gb_units );
   fprintf( file, "  -P pdist        Maximum parallel separation to consider joining (def.=%g %s)\n", gb_join_max_parallel, gb_units );
@@ -118,7 +127,7 @@ void print_usage( FILE *file ) {
   fprintf( file, "  -V (-|+|level)  Set verbosity level (def.=%d)\n", verbosity );
   fprintf( file, "  -h              Print this usage information and exit\n" );
   fprintf( file, "  -v              Print version and exit\n" );
-  fprintf( file, "\n");
+  fprintf( file, "\n" );
   print_svn_rev( file );
 }
 
@@ -1060,6 +1069,8 @@ int main( int argc, char *argv[] ) {
   logfile = stderr;
   int err = 0;
   FILE *ifd = NULL;
+  FILE *ofd_xmlpage = ofn_xmlpage == NULL ? NULL : stdout ;
+  FILE *ofd_ascii = ofn_ascii == NULL ? NULL : stdout ;
   char lsdtmp[FILENAME_MAX];
   char pgmtmp[FILENAME_MAX];
 
@@ -1069,7 +1080,7 @@ int main( int argc, char *argv[] ) {
     return SUCCESS;
   }
 
-  char const *optstr = "OF:T:D:S:P:A:a:J:M:m:u:d:pl:V:hv";
+  char const *optstr = "ON:L:x:o:T:C:D:S:P:A:a:J:M:m:u:d:pl:V:hv";
   while( getopt(argc,argv,optstr) != -1 );
   int nopts = optind;
   optind = 1;
@@ -1085,15 +1096,17 @@ int main( int argc, char *argv[] ) {
       die( "error: not compiled with opencv LSD support" );
 #endif
       break;
-    case 'F':
-      if( ! strcmp(optarg,"ascii") )
-        gb_format = OUT_ASCII;
-      else if( ! strcmp(optarg,"xmlpage") )
-        gb_format = OUT_XMLPAGE;
-      else {
-        print_usage( logfile );
-        return FAILURE;
-      }
+    case 'N':
+      gb_nbest = atoi(optarg);
+      break;
+    case 'L':
+      gb_level = atoi(optarg);
+      break;
+    case 'x':
+      ofn_xmlpage = optarg;
+      break;
+    case 'o':
+      ofn_ascii = optarg;
       break;
     case 'T':
       p = optarg;
@@ -1107,6 +1120,10 @@ int main( int argc, char *argv[] ) {
           m = 2;
         p ++;
       }
+      break;
+    case 'C':
+      gb_corner_restX = atof(optarg);
+      gb_corner_restY = atof(strchr(optarg,',')+1);
       break;
     case 'D':
       gb_twopage = atof(optarg);
@@ -1217,9 +1234,35 @@ int main( int argc, char *argv[] ) {
     return FAILURE;
   }
 
-  logger( 2, "input image: %s", ifn );
+  /// Open output files ///
+  if( ofn_xmlpage != NULL )
+    logger( 2, "output xmlpage: %s", ofn_xmlpage );
+  if( ofn_ascii != NULL )
+    logger( 2, "output plain text: %s", ofn_ascii );
+
+  if( ofn_xmlpage == NULL );
+  else if( ! strcmp( ofn_xmlpage, "-" ) ||
+           ! strcmp( ofn_xmlpage, "stdout" ) ||
+           ! strcmp( ofn_xmlpage, "/dev/stdout" ) )
+    ofd_xmlpage = stdout;
+  else if( ! strcmp( ofn_xmlpage, "null" ) )
+    ofd_xmlpage = NULL;
+  else if( (ofd_xmlpage = fopen(ofn_xmlpage,"wb")) == NULL )
+    die( "error: unable to %s file %s", "open output", ofn_xmlpage );
+
+  if( ofn_ascii == NULL );
+  else if( ! strcmp( ofn_ascii, "-" ) ||
+           ! strcmp( ofn_ascii, "stdout" ) ||
+           ! strcmp( ofn_ascii, "/dev/stdout" ) )
+    ofd_ascii = stdout;
+  else if( ! strcmp( ofn_ascii, "null" ) )
+    ofd_ascii = NULL;
+  else if( (ofd_ascii = fopen(ofn_ascii,"wb")) == NULL )
+    die( "error: unable to %s file %s", "open output", ofn_ascii );
 
   /// read image ///
+  logger( 2, "input image: %s", ifn );
+
   MagickCoreGenesis( (char*)NULL, MagickFalse );
 
   Img* img = NULL;
@@ -1294,23 +1337,21 @@ int main( int argc, char *argv[] ) {
   }
 
   /// Print Page XML header ///
-  bool xmlpage = gb_format == OUT_XMLPAGE ? true : false ;
-
-  if ( xmlpage ) {
+  if( ofd_xmlpage != NULL ) {
     char buf[80];
     time_t now = time(0);
     struct tm tstruct;
     tstruct = *localtime( &now );
     strftime( buf, sizeof(buf), "%Y-%m-%dT%X", &tstruct );
 
-    printf( "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" );
-    printf( "<PcGts xmlns=\"http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15 http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15/pagecontent.xsd\">\n" );
-    printf( "<Metadata>\n" );
-    printf( "<Creator>%s</Creator>\n", tool );
-    printf( "<Created>%s</Created>\n", buf );
-    printf( "<LastChange>%s</LastChange>\n", buf );
-    printf( "</Metadata>\n" );
-    printf( "<Page imageFilename=\"%s\" imageWidth=\"%d\" imageHeight=\"%d\">\n", strrchr(ifn,'/') == NULL ? ifn : strrchr(ifn,'/')+1, img->width, img->height );
+    fprintf( ofd_xmlpage, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" );
+    fprintf( ofd_xmlpage, "<PcGts xmlns=\"http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15 http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15/pagecontent.xsd\">\n" );
+    fprintf( ofd_xmlpage, "  <Metadata>\n" );
+    fprintf( ofd_xmlpage, "    <Creator>%s</Creator>\n", tool );
+    fprintf( ofd_xmlpage, "    <Created>%s</Created>\n", buf );
+    fprintf( ofd_xmlpage, "    <LastChange>%s</LastChange>\n", buf );
+    fprintf( ofd_xmlpage, "  </Metadata>\n" );
+    fprintf( ofd_xmlpage, "  <Page imageFilename=\"%s\" imageHeight=\"%d\" imageWidth=\"%d\">\n", strrchr(ifn,'/') == NULL ? ifn : strrchr(ifn,'/')+1, img->height, img->width );
   }
 
 
@@ -1581,14 +1622,16 @@ int main( int argc, char *argv[] ) {
 
 
     /// Output results ///
-    if( ! xmlpage ) {
+    if( ofd_ascii != NULL ) {
       for( size_t k=0; k<directed_segments.size(); k++ ) {
         /// Print the filtered LSD segments for each direction ///
         for( size_t i=0; i<directed_segments[k].size(); i++ ) {
           Point2f p1 = directed_segments[k][i][0];
           Point2f p2 = directed_segments[k][i][1];
-          printf( "%s %g,%g %g,%g\n", dirname[k], p1.x, p1.y, p2.x, p2.y );
+          fprintf( ofd_ascii, "%s %g,%g %g,%g\n", dirname[k], p1.x, p1.y, p2.x, p2.y );
         }
+        if( gb_level < 2 )
+          continue;
         for( size_t i=0; i<polysegm_indexes[k].size(); i++ ) {
           /// Print the join segments ///
           for( size_t j=1; j<polysegm_indexes[k][i].size(); j++ ) {
@@ -1596,28 +1639,33 @@ int main( int argc, char *argv[] ) {
             int curr = polysegm_indexes[k][i][j];
             Point2f prev2 = directed_segments[k][prev][1];
             Point2f curr1 = directed_segments[k][curr][0];
-            printf( "%s_join %g,%g %g,%g %zu %zu\n", dirname[k], prev2.x, prev2.y, curr1.x, curr1.y, i, j );
+            fprintf( ofd_ascii, "%s_join %g,%g %g,%g %zu %zu\n", dirname[k], prev2.x, prev2.y, curr1.x, curr1.y, i, j );
           }
+          if( gb_level < 3 )
+            continue;
           /// Print the joined poly-segment ///
-          printf( "%s_poly", dirname[k] );
+          fprintf( ofd_ascii, "%s_poly", dirname[k] );
           for( size_t j=0; j<polysegm_indexes[k][i].size(); j++ ) {
             int jj = polysegm_indexes[k][i][j];
             Point2f p1 = directed_segments[k][jj][0];
             Point2f p2 = directed_segments[k][jj][1];
-            printf( " %g,%g %g,%g", p1.x, p1.y, p2.x, p2.y );
+            fprintf( ofd_ascii, " %g,%g %g,%g", p1.x, p1.y, p2.x, p2.y );
           }
-          printf( "\n" );
+          fprintf( ofd_ascii, "\n" );
+          if( gb_level < 4 )
+            continue;
           /// Print the fitted poly-segment ///
-          printf( "%s_polyfit %g,%g %g,%g\n", dirname[k], polysegm_fit[k][i][0].x, polysegm_fit[k][i][0].y, polysegm_fit[k][i][1].x, polysegm_fit[k][i][1].y );
+          fprintf( ofd_ascii, "%s_polyfit %g,%g %g,%g\n", dirname[k], polysegm_fit[k][i][0].x, polysegm_fit[k][i][0].y, polysegm_fit[k][i][1].x, polysegm_fit[k][i][1].y );
         }
       } // for( size_t k=0; k<directed_segments.size(); k++ ) {
 
       /// Print the paired-up poly-segments ///
+      if( gb_level >= 5 )
       for( size_t k=0; k<directed_segments.size(); k+=2 ) {
         int kk = k/2;
         for( size_t i=0; i<pairup_fits[kk].size(); i++ ) {
           vector<Point2f> segment = pairup_fits[kk][i];
-          printf( "pairup_%s%s %g,%g %g,%g\n", dirname[k], dirname[k+1], segment[0].x, segment[0].y, segment[1].x, segment[1].y );
+          fprintf( ofd_ascii, "pairup_%s%s %g,%g %g,%g\n", dirname[k], dirname[k+1], segment[0].x, segment[0].y, segment[1].x, segment[1].y );
         }
       }
 
@@ -1625,7 +1673,14 @@ int main( int argc, char *argv[] ) {
 
     /// Loop through table candidates ///
     int num_table = 0;
-    for( int i=0; i<min(1,int(border_candidates.size())); i++ ) {
+    if( gb_level >= 6 )
+    //for( int i=0; i<min(1,int(border_candidates.size())); i++ ) {
+    //for( int i=0; i<min(gb_nbest,int(border_candidates.size())); i++ ) {
+    for( int i=0, nbest=0; i<int(border_candidates.size()); i++ ) {
+      //if( i >= gb_nbest )
+      if( nbest >= gb_nbest )
+        break;
+
       Point2f t1 = pairup_fits[DIR_HORZ][border_candidates[i][0]][0];
       Point2f t2 = pairup_fits[DIR_HORZ][border_candidates[i][1]][1];
       Point2f l1 = pairup_fits[DIR_VERT][border_candidates[i][2]][0];
@@ -1634,6 +1689,37 @@ int main( int argc, char *argv[] ) {
       Point2f r2 = pairup_fits[DIR_VERT][border_candidates[i][5]][1];
       Point2f b1 = border_candidates[i][6]>=0 ? pairup_fits[DIR_HORZ][border_candidates[i][6]][0] : l2;
       Point2f b2 = border_candidates[i][7]>=0 ? pairup_fits[DIR_HORZ][border_candidates[i][7]][1] : r2;
+
+      if( gb_corner_restX < 1.0 || gb_corner_restY < 1.0 ) {
+        int pg_width = img->width;
+        if( gb_twopage && pg == 0 )
+          pg_width = int(gb_twopage);
+        else if( gb_twopage )
+          pg_width -= int(gb_twopage);
+
+        if( t1.y > gb_corner_restY * img->height ||
+            t2.y > gb_corner_restY * img->height ) {
+          logger( 0, "warning: discarding hypothesis %d due to top corners: t1.y=%.0f t2.y=%.0f", i, t1.y, t2.y );
+          continue;
+        }
+        if( img->height - b1.y > gb_corner_restY * img->height ||
+            img->height - b2.y > gb_corner_restY * img->height ) {
+          logger( 0, "warning: discarding hypothesis %d due to bottom corners: b1.y=%.0f b2.y=%.0f", i, b1.y, b2.y );
+          continue;
+        }
+        if( l1.x - (pg==0?0:int(gb_twopage)) > gb_corner_restX * pg_width ||
+            l2.x - (pg==0?0:int(gb_twopage)) > gb_corner_restX * pg_width ) {
+          logger( 0, "warning: discarding hypothesis %d due to left corners: l1.x=%.0f l2.x=%.0f", i, l1.x, l2.x );
+          continue;
+        }
+        if( (pg==0?int(gb_twopage):img->width) - r1.x > gb_corner_restX * pg_width ||
+            (pg==0?int(gb_twopage):img->width) - r2.x > gb_corner_restX * pg_width ) {
+          logger( 0, "warning: discarding hypothesis %d due to right corners: r1.x=%.0f r2.x=%.0f", i, r1.x, r2.x );
+          continue;
+        }
+      }
+
+      nbest++;
 
       if( border_candidates[i][6] < 0 || border_candidates[i][7] < 0 )
         logger( 0, "warning: discarded possible bottom line" );
@@ -1649,26 +1735,29 @@ int main( int argc, char *argv[] ) {
       intersection( b1, b2, r1, r2, bottomright );
 
       /// Print table border ///
-      if( ! xmlpage )
-        printf( "border %g,%g %g,%g %g,%g %g,%g\n",
+      if( ofd_ascii != NULL )
+        fprintf( ofd_ascii, "border %g,%g %g,%g %g,%g %g,%g\n",
           topleft.x, topleft.y,
           topright.x, topright.y,
           bottomright.x, bottomright.y,
           bottomleft.x, bottomleft.y );
-      else {
+      if( ofd_xmlpage != NULL ) {
         char tabid[20];
         if( gb_twopage )
           sprintf( tabid, "pg%d_tb%d", pg+1, ++num_table );
         else
           sprintf( tabid, "tb%d", ++num_table );
-        printf( "<TextRegion id=\"%s\" type=\"floating\">\n", tabid );
-        printf( "<Coords points=\"%g,%g %g,%g %g,%g %g,%g\"/>\n",
+        fprintf( ofd_xmlpage, "    <TextRegion id=\"%s\" type=\"floating\">\n", tabid );
+        fprintf( ofd_xmlpage, "      <Coords points=\"%g,%g %g,%g %g,%g %g,%g\"/>\n",
           topleft.x, topleft.y,
           topright.x, topright.y,
           bottomright.x, bottomright.y,
           bottomleft.x, bottomleft.y );
-        printf( "</TextRegion>\n" );
+        fprintf( ofd_xmlpage, "    </TextRegion>\n" );
       }
+
+      if( gb_level < 7 )
+        continue;
 
       /// Determine column and row separators ///
       int t1i = border_candidates[i][0];
@@ -1870,7 +1959,7 @@ int main( int argc, char *argv[] ) {
 
 
       /// Print table cells as regions ///
-      if( xmlpage )
+      if( ofd_xmlpage != NULL )
       for( int col=1; col<cellpts.cols; col++ )
         for( int row=1; row<cellpts.rows; row++ ) {
           char cellid[32];
@@ -1893,13 +1982,13 @@ int main( int argc, char *argv[] ) {
           Point2f topright = cellpts.at<Point2f>( row-1, col );
           Point2f bottomright = cellpts.at<Point2f>( row, col );
           Point2f bottomleft = cellpts.at<Point2f>( row, col-1 );
-          printf( "<TextRegion id=\"%s\" type=\"floating\">\n", cellid );
-          printf( "<Coords points=\"%g,%g %g,%g %g,%g %g,%g\"/>\n",
+          fprintf( ofd_xmlpage, "    <TextRegion id=\"%s\" type=\"floating\">\n", cellid );
+          fprintf( ofd_xmlpage, "      <Coords points=\"%g,%g %g,%g %g,%g %g,%g\"/>\n",
             topleft.x, topleft.y,
             topright.x, topright.y,
             bottomright.x, bottomright.y,
             bottomleft.x, bottomleft.y );
-          printf( "</TextRegion>\n" );
+          fprintf( ofd_xmlpage, "    </TextRegion>\n" );
         }
     }
   } // for( int pg=0; pg<(gb_twopage?2:1); pg++ ) {
@@ -1956,12 +2045,17 @@ done
 */
 
   /// Close Page XML ///
-  if ( xmlpage )
-    printf( "</Page>\n</PcGts>\n" );
+  if( ofd_xmlpage != NULL )
+  //if ( xmlpage )
+    fprintf( ofd_xmlpage, "  </Page>\n</PcGts>\n" );
 
   /// Release resources ///
   if( logfile != stdout && logfile != stderr )
     fclose( logfile );
+  if( ofd_xmlpage != NULL && ofd_xmlpage != stdout )
+    fclose( ofd_xmlpage );
+  if( ofd_ascii != NULL && ofd_ascii != stdout )
+    fclose( ofd_ascii );
 
   free_Img( img );
 
