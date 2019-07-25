@@ -1,0 +1,3 @@
+[submodule "LSD"]
+	path = LSD
+	url = https://github.com/theWorldCreator/LSD.git

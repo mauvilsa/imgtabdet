@@ -16,6 +16,8 @@ else( ENABLE_OPENCV_LSD )
   add_executable( ${tool_EXE} imgtabdet.cpp iomat.cpp imgio_magick.cpp log.cpp mem.cpp )
 endif( ENABLE_OPENCV_LSD )
 
+add_executable( lsd LSD/lsd_cmd.c LSD/lsd.c )
+
 string( REPLACE ";" " " CFLAGS_STR "-Wall -W ${MagickCore_CFLAGS} ${opencv_CFLAGS}" )
 set_target_properties( ${tool_EXE} PROPERTIES COMPILE_FLAGS "${CFLAGS_STR}" )
 
@@ -23,6 +25,6 @@ include_directories( SYSTEM ${MagickCore_INCLUDEDIR} ) # To suppress system head
 
 target_link_libraries( ${tool_EXE} ${MagickCore_LDFLAGS} ${opencv_LDFLAGS} z m )
 
-install( TARGETS ${tool_EXE} DESTINATION bin )
+install( TARGETS ${tool_EXE} lsd DESTINATION bin )
 
 add_custom_target( realclean cd ${CMAKE_HOME_DIRECTORY} COMMAND rm -fr ${tool_EXE} ${tool_EXE}.exe CMakeFiles CMakeCache.txt cmake_install.cmake install_manifest.txt Makefile )
