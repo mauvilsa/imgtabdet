@@ -729,6 +729,11 @@ void pairUpOpposingSegments( const vector<vector<vector<Point_<T> > > > perdirec
     vector<vector<Point2f> > polysegmki_fit = polysegm_fit[k];
     vector<vector<Point2f> > polysegmkj_fit = polysegm_fit[k+1];
 
+    if ( polysegmki_lengths.size() == 0 || polysegmkj_lengths.size() == 0 ) {
+      pairup_fit.push_back( pairupk_fit );
+      continue;
+    }
+
     vector<int> srti( polysegmki_lengths.size() );
     vector<int> srtj( polysegmkj_lengths.size() );
     sortIdx( polysegmki_lengths, srti, CV_SORT_DESCENDING );
@@ -1067,7 +1072,6 @@ void tableLineScores(
 /*** Program ******************************************************************/
 int main( int argc, char *argv[] ) {
   logfile = stderr;
-  int err = 0;
   FILE *ifd = NULL;
   FILE *ofd_xmlpage = ofn_xmlpage == NULL ? NULL : stdout ;
   FILE *ofd_ascii = ofn_ascii == NULL ? NULL : stdout ;
@@ -1210,13 +1214,14 @@ int main( int argc, char *argv[] ) {
       break;
     default:
       logger( 0, "error: incorrect input argument (-%c)", n );
-      err = FAILURE;
+      print_usage( logfile );
+      return FAILURE;
     case 'h':
       print_usage( logfile );
-      return err;
+      return 0;
     case 'v':
       print_svn_rev( logfile );
-      return err;
+      return 0;
     }
 
   if( argc - nopts > 1 ) {
@@ -1345,7 +1350,7 @@ int main( int argc, char *argv[] ) {
     strftime( buf, sizeof(buf), "%Y-%m-%dT%X", &tstruct );
 
     fprintf( ofd_xmlpage, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" );
-    fprintf( ofd_xmlpage, "<PcGts xmlns=\"http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15 http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15/pagecontent.xsd\">\n" );
+    fprintf( ofd_xmlpage, "<PcGts xmlns=\"http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15\">\n" );
     fprintf( ofd_xmlpage, "  <Metadata>\n" );
     fprintf( ofd_xmlpage, "    <Creator>%s</Creator>\n", tool );
     fprintf( ofd_xmlpage, "    <Created>%s</Created>\n", buf );
@@ -1434,6 +1439,7 @@ int main( int argc, char *argv[] ) {
     segmentsPerDirection( filtered_segments, &directed_segments, NULL /*&directed_indexes*/ );
 
     /// Join almost aligned segments for each direction ///
+    logger( 3, "Join almost aligned segments for each direction" );
     vector<vector<double> > polysegm_lengths;
     vector<vector<vector<int> > > polysegm_indexes;
     vector<vector<vector<Point2f> > > polysegm_fit;
@@ -1453,10 +1459,12 @@ int main( int argc, char *argv[] ) {
     }
 
     /// Pair-up poly-segments of opposing directions ///
+    logger( 3, "Pair-up poly-segments of opposing directions" );
     vector<vector<vector<Point2f> > > pairup_fits;
     pairUpOpposingSegments( directed_segments, polysegm_lengths, polysegm_indexes, polysegm_fit, &pairup_fits );
 
     /// Compute pair-up scores for table begin, end or in between ///
+    logger( 3, "Compute pair-up scores for table begin, end or in between" );
     vector<vector<double> > scores;
     vector<vector<vector<int> > > perpidxs;
     vector<vector<vector<int> > > perp1idxs;
@@ -1494,6 +1502,7 @@ int main( int argc, char *argv[] ) {
     vector<double> scores_right;
     vector<double> scores_leftright;
 
+    logger( 3, "Compute pairSumSortIdxLimit's" );
     vector<Point2i> order_top = pairSumSortIdxLimit( scores[TABL_TOP], scores[TABL_TOP], CV_SORT_ASCENDING | SORT_PAIR_SAME_NOSUM, score_limit, &scores_top );
     vector<Point2i> order_bottom = pairSumSortIdxLimit( scores[TABL_BOTTOM], scores[TABL_BOTTOM], CV_SORT_ASCENDING | SORT_PAIR_SAME_NOSUM, score_limit, &scores_bottom );
     vector<Point2i> order_left = pairSumSortIdxLimit( scores[TABL_LEFT], scores[TABL_LEFT], CV_SORT_ASCENDING | SORT_PAIR_SAME_NOSUM, score_limit, &scores_left );
@@ -1507,6 +1516,7 @@ int main( int argc, char *argv[] ) {
     printf( "order_leftright.size()=%zu\n", order_leftright.size() );*/
 
     /// Precompute bottom candidates perpendicular scores ///
+    logger( 2, "Precompute bottom candidates perpendicular scores" );
     vector<vector<double> > perpbottomscores( order_bottom.size() );
     vector<vector<Point2i> > perpbottomorder( order_bottom.size() );
     for( size_t b=0; b<order_bottom.size(); b++ ) {
@@ -1991,6 +2001,20 @@ int main( int argc, char *argv[] ) {
           fprintf( ofd_xmlpage, "    </TextRegion>\n" );
         }
     }
+
+
+    logger( 3, "Add separators to page xml" );
+
+    for( size_t k=0; k<directed_segments.size(); k+=2 ) {
+      int kk = k/2;
+      for( size_t i=0; i<pairup_fits[kk].size(); i++ ) {
+        vector<Point2f> segment = pairup_fits[kk][i];
+        fprintf( ofd_xmlpage, "    <SeparatorRegion>\n" );
+        fprintf( ofd_xmlpage, "      <Coords points=\"%g,%g %g,%g %g,%g %g,%g\"/>\n", segment[0].x, segment[0].y, segment[1].x, segment[1].y, segment[1].x, segment[1].y, segment[0].x, segment[0].y );
+        fprintf( ofd_xmlpage, "    </SeparatorRegion>\n" );
+      }
+    }
+
   } // for( int pg=0; pg<(gb_twopage?2:1); pg++ ) {
 
 

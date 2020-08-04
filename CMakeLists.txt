@@ -17,6 +17,7 @@ else( ENABLE_OPENCV_LSD )
 endif( ENABLE_OPENCV_LSD )
 
 add_executable( lsd LSD/lsd_cmd.c LSD/lsd.c )
+target_link_libraries( lsd m )
 
 string( REPLACE ";" " " CFLAGS_STR "-Wall -W ${MagickCore_CFLAGS} ${opencv_CFLAGS}" )
 set_target_properties( ${tool_EXE} PROPERTIES COMPILE_FLAGS "${CFLAGS_STR}" )
